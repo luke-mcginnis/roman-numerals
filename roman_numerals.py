@@ -1,16 +1,19 @@
 """Module for roman numeral processing and operations.
 
-Does not support any typographical variants, including large number
-variants.
+Does not support large number variants (e.g. numbers over 3999),
+negative roman numerals, or non-integer roman numerals.
+
+See `RomanNumeral` documentation for more information and examples.
 
 See Also
 --------
 https://en.wikipedia.org/wiki/Roman_numerals
+
 """
 
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import NamedTuple, NoReturn
 import functools
 import random
 import re
@@ -61,10 +64,12 @@ class RomanNumeral:
 
     Most standard aritmatic and boolean operations are allowed between
     two RomanNumeral objects, or a RomanNumeral and integer. Arithmetic
-    operators return a new RomanNumeral object. RomanNumeral object must
-    have an integer value.
+    operators return a new RomanNumeral object.
 
-    RomanNumeral object can represent values in the interval [0, 3999].
+    RomanNumeral object must have an integer value in the interval
+    [0, 3999]. Aritmetic operations with non-integers are generally
+    floored before computation. See Limitations section of README.md for
+    more information and examples.
 
     Parameters
     ----------
@@ -73,21 +78,29 @@ class RomanNumeral:
         integer that is in a range than can be represented with roman
         numerals.
 
+    Attributes
+    ----------
+    value : int
+        The numeric value of the roman numeral.
+
     Raises
     ------
     InvalidRomanNumeralError
         Raised if `numeral` can't be represented with roman numerals.
+        This will happen if `numeral` is not an integer, or is ouside of
+        the range [0, 3999].
 
     Examples
     --------
-    >>> print(RomanNumeral(12))
-    XII
+    >>> str(RomanNumeral(12))
+    'XII'
 
     >>> print(RomanNumeral('MMC').value)
     2100
 
     >>> RomanNumeral(12) * 3
     RomanNumeral("XXXVI", value=36)
+
     """
 
     def __init__(self, numeral: str | int) -> None:
@@ -104,21 +117,24 @@ class RomanNumeral:
         self.value = self._get_value()
 
     def __str__(self) -> str:
+        """Return the roman numeral string of the object."""
         return self._string
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}("{self}", value={self.value})'
+        return f'{self.__class__.__name__}("{self._string}", value={self.value})'
 
     def __int__(self) -> int:
         return self.value
 
     def __bool__(self) -> bool:
+        """Return True if the numeral value is more than zero."""
         return bool(self.value)
 
     def __float__(self) -> float:
         return float(self.value)
 
     def __len__(self) -> int:
+        """Return the number of characters in the roman numeral string."""
         return len(self._string)
 
     def __hash__(self) -> int:
@@ -127,44 +143,70 @@ class RomanNumeral:
     def __add__(self, other: RomanNumeral | int) -> RomanNumeral:
         return self.__class__(self.value + int(other))
 
+    def __radd__(self, other: RomanNumeral | int) -> RomanNumeral:
+        return self.__class__(int(other) + self.value)
+
     def __sub__(self, other: RomanNumeral | int) -> RomanNumeral:
         return self.__class__(self.value - int(other))
+
+    def __rsub__(self, other: RomanNumeral | int) -> RomanNumeral:
+        return self.__class__(int(other) - self.value)
 
     def __mul__(self, other: RomanNumeral | int) -> RomanNumeral:
         return self.__class__(self.value * int(other))
 
-    def __truediv__(self, other: RomanNumeral | int) -> RomanNumeral:
-        return self.__class__(int(self.value / float(other)))
+    def __rmul__(self, other: RomanNumeral | int) -> RomanNumeral:
+        return self.__class__(int(other) * self.value)
 
-    def __floordiv__(self, other: RomanNumeral | int) -> RomanNumeral:
+    def __truediv__(self, other) -> NoReturn:
+        """True Division is not supported by `RomanNumeral` objects to avoid confusion and to avoid multiple implicit
+        flooring operations.
+
+        Use floor division (a // b) or convert to an int before dividing.
+        """
+        raise TypeError('True division is not supported for `RomanNumeral` objects. Use floor division or use '
+                        '`object.value` for this operation.')
+
+    def __rtruediv__(self, other) -> NoReturn:
+        """See __truediv__."""
+        raise TypeError('True division is not supported for `RomanNumeral` objects. Use floor division or use'
+                        ' `object.value` for this operation.')
+
+    def __floordiv__(self, other: RomanNumeral | float) -> RomanNumeral:
         return self.__class__(int(self.value // float(other)))
 
-    def __mod__(self, other: RomanNumeral | int) -> RomanNumeral:
-        return self.__class__(self.value % other)
+    def __rfloordiv__(self, other: RomanNumeral | float) -> RomanNumeral:
+        return self.__class__(int(float(other) // self.value))
 
-    def __pow__(self, other: RomanNumeral | int) -> RomanNumeral:
-        return self.__class__(pow(self.value, int(other)))
+    def __mod__(self, other: RomanNumeral | float) -> RomanNumeral:
+        return self.__class__(int(self.value % float(other)))
 
-    def __lt__(self, other: RomanNumeral | int) -> bool:
+    def __rmod__(self, other: RomanNumeral | float) -> RomanNumeral:
+        return self.__class__(int(float(other) % self.value))
+
+    def __divmod__(self, other: RomanNumeral | float) -> tuple[RomanNumeral, RomanNumeral]:
+        return self // other, self % other
+
+    def __rdivmod__(self, other: RomanNumeral | int) -> tuple[RomanNumeral, RomanNumeral]:
+        return other // self, other % self
+
+    def __lt__(self, other: RomanNumeral | float) -> bool:
         return self.value < float(other)
+
+    def __gt__(self, other: RomanNumeral | float) -> bool:
+        return self.value > float(other)
 
     def __eq__(self, other: RomanNumeral | int) -> bool:
         return self.value == float(other)
 
-    def _get_value(self) -> int:
-        """Evaluate and return the value of the numeral."""
+    def __ne__(self, other: RomanNumeral | int) -> bool:
+        return self.value != float(other)
 
-        self.check_roman_numeral(self._string)
+    def __le__(self, other: RomanNumeral | float) -> bool:
+        return self.value <= float(other)
 
-        total = 0
-        characters = self._string
-        while characters:
-            for numeral, value in reversed(LETTER_VALUES.items()):
-                if characters.startswith(numeral):
-                    total += value
-                    characters = characters.removeprefix(numeral)
-
-        return total
+    def __ge__(self, other: RomanNumeral | float) -> bool:
+        return self.value >= float(other)
 
     def by_place_value(self) -> PlaceValueTuple[RomanNumeral]:
         """Returns a NamedTuple of the numeral broken down into
@@ -183,7 +225,7 @@ class RomanNumeral:
          >>> RomanNumeral('DLXVII').by_place_value().tens
          RomanNumeral("LX", value=60)
 
-         """
+        """
         results = []
         remainder = self.value
 
@@ -195,9 +237,18 @@ class RomanNumeral:
         return PlaceValueTuple(*results)
 
     @classmethod
-    def random_numeral(cls, min_value=0, max_value=None) -> RomanNumeral:
-        """Returns a RomanNumeral with a random valid value."""
-        return cls(random.randint(max(min_value, MIN_VALUE), min(MAX_VALUE, max_value)))
+    def random_numeral(cls, min_value: int = 1, max_value: int = MAX_VALUE) -> RomanNumeral:
+        """Return a RomanNumeral with a random valid value.
+
+        The resulting value will be between min_value and max_value,
+        inclusive.
+        """
+        if min_value < 0:
+            raise ValueError('`min_value` must be greater than or equal to 0.')
+        if max_value > MAX_VALUE:
+            raise ValueError(f'`min_value` must be greater than or equal to {MAX_VALUE}.')
+
+        return cls(random.randint(min_value, max_value))
 
     @staticmethod
     def check_roman_numeral(numeral: str) -> None:
@@ -230,6 +281,21 @@ class RomanNumeral:
 
         return roman
 
+    def _get_value(self) -> int:
+        """Evaluate and return the value of the numeral."""
+
+        self.check_roman_numeral(self._string)
+
+        total = 0
+        characters = self._string
+        while characters:
+            for numeral, value in reversed(LETTER_VALUES.items()):
+                if characters.startswith(numeral):
+                    total += value
+                    characters = characters.removeprefix(numeral)
+
+        return total
+
 
 if __name__ == '__main__':
-    print(help(RomanNumeral))
+    help(RomanNumeral)
