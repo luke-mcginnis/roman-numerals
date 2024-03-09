@@ -139,6 +139,9 @@ class TestRomanNumeral(unittest.TestCase):
         self.assertEqual(places[-3], RomanNumeral(200))
         self.assertEqual(places[-4], RomanNumeral(1000))
 
+    def test_random_numeral(self):
+        self.assertIsInstance(RomanNumeral.random_numeral(max_value=99), RomanNumeral)
+
 
 if __name__ == '__main__':
     unittest.main()

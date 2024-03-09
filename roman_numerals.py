@@ -159,18 +159,19 @@ class RomanNumeral:
         return self.__class__(int(other) * self.value)
 
     def __truediv__(self, other) -> NoReturn:
-        """True Division is not supported by `RomanNumeral` objects to avoid confusion and to avoid multiple implicit
-        flooring operations.
+        """True Division is not supported by `RomanNumeral` objects to
+        avoid confusion and to avoid multiple implicit flooring
+        operations.
 
         Use floor division (a // b) or convert to an int before dividing.
         """
-        raise TypeError('True division is not supported for `RomanNumeral` objects. Use floor division or use '
-                        '`object.value` for this operation.')
+        raise TypeError('True division is not supported for `RomanNumeral` objects. Use floor'
+                        ' division or use `object.value` for this operation.')
 
     def __rtruediv__(self, other) -> NoReturn:
         """See __truediv__."""
-        raise TypeError('True division is not supported for `RomanNumeral` objects. Use floor division or use'
-                        ' `object.value` for this operation.')
+        raise TypeError('True division is not supported for `RomanNumeral` objects. Use floor'
+                        ' division or use `object.value` for this operation.')
 
     def __floordiv__(self, other: RomanNumeral | float) -> RomanNumeral:
         return self.__class__(int(self.value // float(other)))
@@ -252,7 +253,7 @@ class RomanNumeral:
 
     @staticmethod
     def check_roman_numeral(numeral: str) -> None:
-        """Raise `InvalidRomanError` if a string is not a valid RomanNumeral."""
+        """Raise error if a string is not a valid RomanNumeral."""
         valid_roman_numeral_regex = re.compile(
                 r'^'
                 r'M{0,3}'            # Thousands
