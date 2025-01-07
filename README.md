@@ -64,7 +64,7 @@ RomanNumeral(10) % 2.5  # 0
 ```
 
 ## License
-This module is open-source software distributed under the MIT License. See LICENSE for more information.
+This module is open-source software distributed under the MIT License. See [LICENSE](/LICENSE) for more information.
 
 
 Copyright © 2024 Luke McGinnis
